@@ -1,0 +1,30 @@
+{
+  "name": "weather-forecast-app",
+  "version": "1.0.0",
+  "description": "Weather forecast web application for Indian cities — Express backend, OpenStreetMap Nominatim geocoding, OpenWeatherMap data, CSV export.",
+  "main": "server/server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js",
+    "test": "node test/unit.test.js",
+    "test:live": "node test/live.test.js"
+  },
+  "keywords": [
+    "weather",
+    "forecast",
+    "express",
+    "openweathermap",
+    "nominatim",
+    "csv",
+    "responsive"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,1389 @@
+/* ==========================================================================
+   SkyPulse India — stylesheet
+   --------------------------------------------------------------------------
+   How this file is organised:
+
+     1.  Design tokens          — colours, spacing, radii, shadows, easing
+     2.  Base & reset           — page defaults and overflow guards
+     3.  Animated background    — the drifting aurora behind the page
+     4.  Header
+     5.  Search panel
+     6.  Buttons & small controls
+     7.  Page states            — initial, loading, error
+     8.  Hero card              — headline weather + per-condition themes
+     9.  Metric tiles
+     10. Forecast cards         — including the temperature range bar
+     11. Day selector           — segmented control with a sliding highlight
+     12. Weather icon animation
+     13. Keyframes              — every @keyframes in one block
+     14. Responsive refinements
+     15. Accessibility & print
+
+   Tailwind (CDN) is used for layout utilities only — grid, flex, spacing.
+   Everything visual lives here as a named component class, so the markup
+   stays readable and the design can be changed in one place.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Design tokens
+   ========================================================================== */
+
+:root {
+  /* Brand ramp */
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #3b82f6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+
+  /* Neutrals */
+  --ink: #0f172a;
+  --ink-muted: #475569;
+  --ink-soft: #94a3b8;
+  --line: #e2e8f0;
+  --line-soft: #eef2f7;
+  --surface: #ffffff;
+  --surface-sunk: #f8fafc;
+
+  /* Feedback */
+  --danger: #e11d48;
+  --danger-soft: #fff1f2;
+  --danger-line: #fecdd3;
+  --success: #059669;
+  --success-soft: #ecfdf5;
+  --success-line: #a7f3d0;
+
+  /* Shape */
+  --r-sm: 0.625rem;
+  --r-md: 0.875rem;
+  --r-lg: 1.25rem;
+  --r-xl: 1.75rem;
+  --r-pill: 9999px;
+
+  /* Elevation — low spread, soft falloff */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 2px 4px rgba(15, 23, 42, 0.04), 0 12px 28px -14px rgba(15, 23, 42, 0.18);
+  --shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.05), 0 24px 48px -20px rgba(15, 23, 42, 0.28);
+
+  /* Motion — one easing curve and three durations, used everywhere */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-fast: 160ms;
+  --t-base: 280ms;
+  --t-slow: 560ms;
+
+  /* Hero theme defaults; overridden per weather condition in section 8. */
+  --hero-from: #0b5ea8;
+  --hero-to: #2aa0e8;
+  --hero-glow: #fcd34d;
+}
+
+/* ==========================================================================
+   2. Base & reset
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+/* Belt-and-braces guard: nothing may scroll the page sideways. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #eef4fb;
+  color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd {
+  margin: 0;
+}
+
+/* ==========================================================================
+   3. Animated background
+   Three slow-drifting colour fields behind a soft base. Purely decorative
+   and marked aria-hidden in the markup.
+   ========================================================================== */
+
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(180deg, #f5f9fe 0%, #e8f0fa 100%);
+}
+
+.aurora__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.aurora__blob--1 {
+  top: -14rem;
+  left: -10rem;
+  width: 36rem;
+  height: 36rem;
+  background: radial-gradient(circle, #bfdbfe, transparent 68%);
+  animation: drift-a 26s var(--ease) infinite alternate;
+}
+
+.aurora__blob--2 {
+  top: -8rem;
+  right: -12rem;
+  width: 32rem;
+  height: 32rem;
+  background: radial-gradient(circle, #c7e9ff, transparent 68%);
+  animation: drift-b 32s var(--ease) infinite alternate;
+}
+
+.aurora__blob--3 {
+  bottom: -16rem;
+  left: 30%;
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(circle, #dbeafe, transparent 70%);
+  animation: drift-c 38s var(--ease) infinite alternate;
+}
+
+/* Everything above the background sits in this stacking context. */
+.layer {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   4. Header
+   ========================================================================== */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 76rem;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2.375rem;
+  height: 2.375rem;
+  /* A soft, brand-tinted shadow lifts the mark off the header without
+     putting a container back behind it. */
+  filter: drop-shadow(0 2px 5px rgba(29, 78, 216, 0.28));
+}
+
+/* The logo pulse is two strokes: a permanent base, so the mark is never
+   missing its defining element, and a brighter highlight that sweeps across
+   it. pathLength="100" makes the dash values resolution-independent. */
+.brand-pulse-base {
+  /* Kept strong so the line stays legible at favicon and header sizes. */
+  opacity: 0.85;
+}
+
+.brand-pulse {
+  stroke-dasharray: 22 100;
+  animation: pulse-trace 3.6s linear infinite;
+}
+
+.brand-name {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  /* min-width lets the heading shrink and ellipsise inside the flex header
+     rather than pushing it wider. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   5. Search panel
+   ========================================================================== */
+
+.panel {
+  border-radius: var(--r-xl);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-md);
+}
+
+.search {
+  padding: 0.75rem;
+}
+
+.search__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.search__field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.search__icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-soft);
+  pointer-events: none;
+  transition: color var(--t-base) var(--ease);
+}
+
+.search__input {
+  width: 100%;
+  height: 3.25rem;
+  padding: 0 1rem 0 2.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface-sunk);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9375rem;
+  transition: border-color var(--t-base) var(--ease), background-color var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease);
+}
+
+.search__input::placeholder {
+  color: var(--ink-soft);
+}
+
+.search__input:focus {
+  outline: none;
+  border-color: var(--brand-400);
+  background: var(--surface);
+  box-shadow: 0 0 0 4px var(--brand-100);
+}
+
+/* Tint the leading icon while the field has focus. */
+.search__field:focus-within .search__icon {
+  color: var(--brand-500);
+}
+
+.search__hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+  padding: 0 0.25rem;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.search__error {
+  margin-top: 0.5rem;
+  padding: 0 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--danger);
+  animation: shake var(--t-base) var(--ease);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 0 0.3rem;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 0.375rem;
+  background: var(--surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem;
+  color: var(--ink-muted);
+}
+
+/* ==========================================================================
+   6. Buttons & small controls
+   ========================================================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  /* 44px: a comfortable tap target on every device. */
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-lg);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease), background-color var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease), border-color var(--t-base) var(--ease),
+    color var(--t-base) var(--ease);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  color: #fff;
+  box-shadow: 0 6px 16px -8px rgba(37, 99, 235, 0.9);
+}
+
+.btn--primary:hover:not(:disabled) {
+  box-shadow: 0 10px 22px -8px rgba(37, 99, 235, 0.95);
+}
+
+/* A light sweep crosses the button on hover. */
+.btn--primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.28), transparent 80%);
+  transform: translateX(-120%);
+  transition: transform var(--t-slow) var(--ease);
+}
+
+.btn--primary:hover:not(:disabled)::after {
+  transform: translateX(120%);
+}
+
+.btn--secondary {
+  background: var(--surface);
+  color: var(--brand-700);
+  border-color: var(--brand-200);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--brand-50);
+  border-color: var(--brand-300);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--ink-muted);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--ink);
+}
+
+.btn--search {
+  height: 3.25rem;
+  padding: 0 1.5rem;
+  font-size: 0.9375rem;
+}
+
+/* Example-city pills under the search field. */
+.chip {
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: transform var(--t-fast) var(--ease), background-color var(--t-base) var(--ease),
+    color var(--t-base) var(--ease), border-color var(--t-base) var(--ease);
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+  background: var(--brand-50);
+  border-color: var(--brand-200);
+  color: var(--brand-700);
+}
+
+.link {
+  color: var(--brand-700);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--brand-200);
+  text-underline-offset: 2px;
+  border-radius: 2px;
+}
+
+.link:hover {
+  text-decoration-color: var(--brand-500);
+}
+
+/* One consistent focus ring across every interactive element. */
+.btn:focus-visible,
+.chip:focus-visible,
+.link:focus-visible,
+.day:focus-within,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   7. Page states
+   ========================================================================== */
+
+/* Each state fades in when it becomes the active one. */
+.state {
+  animation: fade-up var(--t-base) var(--ease) both;
+}
+
+.empty {
+  padding: 2.75rem 1.5rem;
+  border: 1px dashed #cbd8e8;
+  border-radius: var(--r-xl);
+  background: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.empty__icon {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto;
+  border-radius: var(--r-lg);
+  background: var(--brand-50);
+  color: var(--brand-500);
+  animation: float 5s ease-in-out infinite;
+}
+
+.empty__title {
+  margin-top: 1.125rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.empty__text {
+  max-width: 28rem;
+  margin: 0.5rem auto 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+
+.loading {
+  padding: 1.25rem;
+}
+
+.loading__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+}
+
+.skeleton {
+  border-radius: var(--r-md);
+  background: linear-gradient(90deg, #e9eef6 25%, #f7fafd 37%, #e9eef6 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.error {
+  padding: 2.25rem 1.5rem;
+  border: 1px solid var(--danger-line);
+  border-radius: var(--r-xl);
+  background: var(--danger-soft);
+  text-align: center;
+}
+
+.error__icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--danger);
+  box-shadow: var(--shadow-sm);
+}
+
+.error__title {
+  margin-top: 1rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.error__text {
+  max-width: 34rem;
+  margin: 0.5rem auto 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.error__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+}
+
+/* ==========================================================================
+   8. Hero card
+   The headline block. Its gradient is driven by [data-weather], set from
+   the current condition in app.js, so the page takes on the weather's mood.
+   ========================================================================== */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background: linear-gradient(140deg, var(--hero-from), var(--hero-to));
+  color: #fff;
+  box-shadow: var(--shadow-lg);
+  /* Theme changes between searches glide instead of snapping. */
+  transition: background var(--t-slow) var(--ease);
+}
+
+/* Per-condition palettes. Each keeps white text well above 4.5:1. */
+.hero[data-weather='clear-day']   { --hero-from: #0b5ea8; --hero-to: #2f9fe0; --hero-glow: #fcd34d; }
+.hero[data-weather='clear-night'] { --hero-from: #121f3d; --hero-to: #30487a; --hero-glow: #a5b4fc; }
+.hero[data-weather='clouds']      { --hero-from: #41566c; --hero-to: #76889c; --hero-glow: #e2e8f0; }
+.hero[data-weather='rain']        { --hero-from: #0d3c61; --hero-to: #1f7396; --hero-glow: #67e8f9; }
+.hero[data-weather='thunder']     { --hero-from: #2b2456; --hero-to: #4f3d8c; --hero-glow: #fbbf24; }
+.hero[data-weather='snow']        { --hero-from: #2f5a7c; --hero-to: #6fa2c2; --hero-glow: #e0f2fe; }
+.hero[data-weather='mist']        { --hero-from: #48596a; --hero-to: #7f90a0; --hero-glow: #dbeafe; }
+
+/* Soft coloured light source in the top-right of the card. */
+.hero__glow {
+  position: absolute;
+  top: -8rem;
+  right: -6rem;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--hero-glow), transparent 65%);
+  opacity: 0.4;
+  filter: blur(10px);
+  pointer-events: none;
+  animation: glow-pulse 7s ease-in-out infinite;
+}
+
+.hero__body {
+  position: relative;
+  padding: 1.5rem 1.25rem;
+}
+
+.hero__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.hero__place {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.hero__meta,
+.hero__time {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.78);
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  flex-shrink: 0;
+  padding: 0.2rem 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hero__main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.hero__icon {
+  flex-shrink: 0;
+  width: 5rem;
+  height: 5rem;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.22));
+}
+
+.hero__readout {
+  min-width: 0;
+}
+
+.hero__temp {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero__unit {
+  margin-top: 0.4rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.hero__condition {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  overflow-wrap: anywhere;
+}
+
+.hero__feels {
+  margin-top: 0.125rem;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ==========================================================================
+   9. Metric tiles
+   Translucent tiles on the lower half of the hero card.
+   ========================================================================== */
+
+.metrics {
+  position: relative;
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.metric {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.12);
+  /* Each tile rises in, staggered by --i from app.js. */
+  animation: rise-in var(--t-base) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  transition: transform var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
+}
+
+.metric:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.metric__label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.metric__value {
+  margin-top: 0.3rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Data the API did not report is shown smaller and dimmer, never as a value. */
+.metric__value.is-missing {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ==========================================================================
+   10. Forecast cards
+   ========================================================================== */
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+
+.fcard {
+  display: flex;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-sm);
+  /* Staggered entrance; --i is set per card in app.js. */
+  animation: rise-in var(--t-base) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+  transition: transform var(--t-base) var(--ease), box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
+}
+
+.fcard:hover {
+  transform: translateY(-4px);
+  border-color: var(--brand-200);
+  box-shadow: var(--shadow-lg);
+}
+
+.fcard__head {
+  display: flex;
+  flex-direction: column;
+}
+
+.fcard__day {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-600);
+}
+
+.fcard__date {
+  margin-top: 0.1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.fcard__icon {
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0.375rem 0;
+}
+
+.fcard__desc {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-transform: capitalize;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+  /* Clamped to two lines so every card in the row keeps the same rhythm. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fcard__body {
+  min-width: 0;
+}
+
+.fcard__temps {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fcard__max {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.fcard__min {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.fcard__scale {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* --- Temperature range bar ------------------------------------------------
+   Shows where this day's min–max sits within the whole forecast period, so
+   warmer and cooler days are comparable at a glance. The fill's offset and
+   width are set as inline custom properties by app.js. */
+.trange {
+  position: relative;
+  height: 0.3125rem;
+  margin: 0.5rem 0 0.625rem;
+  border-radius: var(--r-pill);
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+.trange__fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--range-start, 0%);
+  width: var(--range-width, 100%);
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, #38bdf8, #fbbf24);
+  transform-origin: left center;
+  animation: grow-x var(--t-slow) var(--ease) both;
+}
+
+.fstat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.3rem 0;
+  border-top: 1px dashed var(--line-soft);
+  font-size: 0.8125rem;
+}
+
+.fstat:first-child {
+  border-top: 0;
+}
+
+.fstat dt {
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.fstat dd {
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.fstat dd.is-missing {
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.fcard__partial {
+  margin-top: 0.5rem;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+.forecast-note {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.export-feedback {
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--r-md);
+  font-size: 0.875rem;
+  animation: fade-up var(--t-base) var(--ease) both;
+}
+
+.export-feedback--ok {
+  border: 1px solid var(--success-line);
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.export-feedback--error {
+  border: 1px solid var(--danger-line);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* ==========================================================================
+   11. Day selector
+   A segmented control. The active segment is a single element that slides
+   between positions, which reads as one object moving rather than five
+   backgrounds blinking on and off.
+   ========================================================================== */
+
+.days {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(2.75rem, 1fr));
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* The sliding highlight. Position and size come from app.js. */
+.days__thumb {
+  position: absolute;
+  top: 0.25rem;
+  left: 0;
+  height: calc(100% - 0.5rem);
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  box-shadow: 0 4px 12px -4px rgba(37, 99, 235, 0.8);
+  /* Position and width are set by app.js once the active segment can be
+     measured; only the transition is declared here. Animating left/width
+     (rather than a transform) keeps the highlight exactly on the segment
+     box at every viewport size — the control is small, so the layout cost
+     is irrelevant. */
+  width: 0;
+  transition: left var(--t-base) var(--ease), width var(--t-base) var(--ease);
+  pointer-events: none;
+}
+
+/* Before the first measurement the thumb is hidden, so it never flashes
+   at the wrong position on load. */
+.days__thumb:not(.is-ready) {
+  opacity: 0;
+}
+
+.day {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  /* 44px keeps each segment a comfortable tap target. */
+  min-height: 2.75rem;
+  border-radius: var(--r-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--t-base) var(--ease);
+}
+
+.day:hover {
+  color: var(--ink);
+}
+
+/* The native radio stays in the DOM — focusable and announced — but hidden. */
+.day input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.day.is-active {
+  color: #fff;
+}
+
+.day__unit {
+  font-size: 0.625rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* ==========================================================================
+   12. Weather icon animation
+   Icons are inline SVG built in app.js. Each moving part carries a class
+   that is animated here, so markup and motion stay separate.
+   ========================================================================== */
+
+.wi-spin,
+.wi-pulse,
+.wi-flake {
+  /* Required so percentage transform-origins resolve against the shape. */
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.wi-spin {
+  animation: spin 22s linear infinite;
+}
+
+.wi-pulse {
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.wi-cloud {
+  animation: drift-x 7s ease-in-out infinite;
+}
+
+.wi-drop {
+  animation: fall 1.5s linear infinite;
+}
+
+/* Staggering the drops turns three identical shapes into falling rain. */
+.wi-drop:nth-child(2) { animation-delay: 0.3s; }
+.wi-drop:nth-child(3) { animation-delay: 0.6s; }
+.wi-drop:nth-child(4) { animation-delay: 0.9s; }
+
+.wi-flake {
+  animation: flutter 3.4s ease-in-out infinite;
+}
+
+.wi-flake:nth-child(3) { animation-delay: 0.8s; }
+
+.wi-bolt {
+  animation: flash 3.2s ease-in-out infinite;
+}
+
+.wi-mist {
+  animation: slide-x 4.5s ease-in-out infinite;
+}
+
+.wi-mist:nth-child(2) { animation-delay: 0.4s; }
+.wi-mist:nth-child(3) { animation-delay: 0.8s; }
+.wi-mist:nth-child(4) { animation-delay: 1.2s; }
+
+.spinner {
+  display: inline-block;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.spinner--brand {
+  border-color: var(--brand-100);
+  border-top-color: var(--brand-600);
+}
+
+/* ==========================================================================
+   13. Keyframes
+   ========================================================================== */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes drift-x {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(2.5px); }
+}
+
+@keyframes slide-x {
+  0%, 100% { transform: translateX(-2px); opacity: 0.75; }
+  50%      { transform: translateX(2px);  opacity: 1; }
+}
+
+@keyframes fall {
+  0%   { transform: translateY(-3px); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateY(9px);  opacity: 0; }
+}
+
+@keyframes flutter {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(4px) rotate(18deg); }
+}
+
+@keyframes flash {
+  0%, 62%, 70%, 100% { opacity: 1; }
+  66%, 74%           { opacity: 0.25; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.32; transform: scale(1); }
+  50%      { opacity: 0.5;  transform: scale(1.08); }
+}
+
+@keyframes pulse-trace {
+  /* A short bright segment travels the length of the line, then pauses. */
+  0%   { stroke-dashoffset: 30; }
+  55%  { stroke-dashoffset: -100; }
+  100% { stroke-dashoffset: -100; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes grow-x {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes shake {
+  0%, 100%  { transform: translateX(0); }
+  25%       { transform: translateX(-3px); }
+  75%       { transform: translateX(3px); }
+}
+
+@keyframes drift-a {
+  to { transform: translate(6rem, 4rem) scale(1.12); }
+}
+
+@keyframes drift-b {
+  to { transform: translate(-5rem, 5rem) scale(1.08); }
+}
+
+@keyframes drift-c {
+  to { transform: translate(4rem, -4rem) scale(1.1); }
+}
+
+/* ==========================================================================
+   14. Responsive refinements
+   Mobile-first: the rules above describe the phone layout, and these
+   progressively enhance it. Verified at 320, 375, 768, 1024 and 1440px.
+   ========================================================================== */
+
+/* --- Small phones (320–380px): tighten everything a notch --------------- */
+@media (max-width: 380px) {
+  .hero__temp { font-size: 3rem; }
+  .hero__icon { width: 4.25rem; height: 4.25rem; }
+  .hero__body { padding: 1.25rem 1rem; }
+  .metric { padding: 0.625rem; }
+  .metric__value { font-size: 1rem; }
+  .btn { padding: 0 0.875rem; }
+  .days { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+/* --- Phones: forecast cards read better as compact horizontal rows ------ */
+@media (max-width: 639px) {
+  .fcard {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.875rem;
+  }
+  .fcard__head {
+    width: 5rem;
+    flex-shrink: 0;
+    align-items: center;
+    text-align: center;
+  }
+  .fcard__body { flex: 1; }
+  .fcard__desc { -webkit-line-clamp: 3; }
+  /* Full-width controls stack cleanly and can never overlap. */
+  .search__row > .btn,
+  #export-button { width: 100%; }
+}
+
+/* --- Tablet and up ------------------------------------------------------ */
+@media (min-width: 640px) {
+  .site-header__inner { padding: 0.875rem 1.5rem; }
+  .brand-mark { width: 2.625rem; height: 2.625rem; }
+  .brand-name { font-size: 1.1875rem; }
+
+  .search { padding: 1rem; }
+  .search__row { flex-direction: row; align-items: flex-start; }
+
+  .hero__body { padding: 1.75rem; }
+  .hero__place { font-size: 1.625rem; }
+  .hero__main { gap: 1.75rem; margin-top: 1.5rem; }
+  .hero__icon { width: 6rem; height: 6rem; }
+  .hero__temp { font-size: 4.25rem; }
+  .hero__unit { font-size: 1.5rem; }
+  .metrics { padding: 1.25rem 1.5rem; }
+
+  /* Vertical cards inside the grid from this width up. */
+  .fcard { flex-direction: column; }
+  /* Reserve two lines for the description so every card in a row keeps
+     its temperatures and stats on the same baseline. */
+  .fcard__desc { min-height: 2.1rem; }
+  .section-title { font-size: 1.25rem; }
+}
+
+/* --- Laptops ------------------------------------------------------------ */
+@media (min-width: 1024px) {
+  .hero__temp { font-size: 5rem; }
+  .hero__place { font-size: 1.875rem; }
+  .hero__icon { width: 7rem; height: 7rem; }
+}
+
+/* --- Large desktops: a little more air ---------------------------------- */
+@media (min-width: 1440px) {
+  .hero__body { padding: 2.25rem; }
+  .metrics { padding: 1.5rem 1.75rem; }
+  .fcard { padding: 1.125rem; }
+}
+
+/* ==========================================================================
+   15. Accessibility & print
+   ========================================================================== */
+
+/* Honour the operating-system "reduce motion" setting: all decorative
+   movement stops. The spinner keeps turning slowly, because it is the only
+   signal that a request is still running. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .spinner {
+    animation: spin 1.4s linear infinite !important;
+    animation-duration: 1.4s !important;
+    animation-iteration-count: infinite !important;
+  }
+
+  .fcard:hover,
+  .metric:hover,
+  .chip:hover {
+    transform: none;
+  }
+
+  /* No sweep: the logo line simply stays fully drawn. */
+  .brand-pulse { display: none; }
+  .brand-pulse-base { opacity: 1; }
+}
+
+@media (prefers-contrast: more) {
+  .fcard { border-color: var(--ink-soft); }
+  .section-subtitle,
+  .fcard__desc { color: var(--ink); }
+}
+
+/* Mirrors Tailwind's sr-only so the file works even if the CDN is blocked. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.skip-link:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.skip-link:focus {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 50;
+  padding: 0.5rem 1rem;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--brand-700);
+  box-shadow: var(--shadow-md);
+}
+
+/* Hide the browser's own search-field clear button; the design supplies its own affordances. */
+input[type='search']::-webkit-search-decoration,
+input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+@media print {
+  .aurora,
+  .site-header,
+  #search-form,
+  #days-selector,
+  #export-button,
+  footer {
+    display: none !important;
+  }
+
+  .hero {
+    color: var(--ink);
+    background: none;
+    box-shadow: none;
+  }
+}

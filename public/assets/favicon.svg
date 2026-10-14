@@ -1,0 +1,62 @@
+<!--
+  SkyPulse India — application mark.
+
+  A cloud with a pulse line running through it: the "sky" and the "pulse" in
+  one shape. The cloud is built from overlapping circles over a rounded base,
+  which gives a rounder, friendlier silhouette than a single outline.
+
+  This tiled version is the app/browser icon, where a solid background keeps
+  the mark visible against light and dark tab strips. The header in the app
+  uses the same geometry without the tile.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SkyPulse India">
+  <title>SkyPulse India</title>
+
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="55%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+
+    <linearGradient id="cloud" x1="12" y1="12" x2="52" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#d7e7fb" />
+    </linearGradient>
+
+    <linearGradient id="pulse" x1="5" y1="36" x2="59" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+  </defs>
+
+  <!-- Tile -->
+  <rect width="64" height="64" rx="15" fill="url(#tile)" />
+
+  <!-- Soft light source, top-right -->
+  <circle cx="50" cy="13" r="16" fill="#ffffff" opacity="0.13" />
+
+  <!-- Cloud -->
+  <g fill="url(#cloud)">
+    <circle cx="33" cy="27" r="13.2" />
+    <circle cx="20.4" cy="34.4" r="9.6" />
+    <circle cx="45" cy="35.2" r="8.6" />
+    <rect x="11.6" y="34.6" width="42.4" height="13.2" rx="6.6" />
+  </g>
+
+  <!-- Pulse line, with a tinted channel so it lifts off the cloud -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M5 36h12.6l4.8-11.6 6.8 21.2L35 31.2l4.8 4.8H59"
+      stroke="#1d4ed8"
+      stroke-opacity="0.18"
+      stroke-width="8.4"
+    />
+    <path
+      d="M5 36h12.6l4.8-11.6 6.8 21.2L35 31.2l4.8 4.8H59"
+      stroke="url(#pulse)"
+      stroke-width="4.6"
+    />
+  </g>
+</svg>

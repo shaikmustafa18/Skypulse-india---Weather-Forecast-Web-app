@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="Real-time weather conditions and 1–5 day forecasts for cities across India, with CSV export."
+    />
+    <meta name="theme-color" content="#eef4fb" />
+    <title>SkyPulse India — Weather &amp; Forecasts</title>
+
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Tailwind supplies layout utilities only (grid, flex, spacing).
+         All component styling lives in style.css. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- Decorative animated background. -->
+    <div class="aurora" aria-hidden="true">
+      <span class="aurora__blob aurora__blob--1"></span>
+      <span class="aurora__blob aurora__blob--2"></span>
+      <span class="aurora__blob aurora__blob--3"></span>
+    </div>
+
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- ===================== Header ===================== -->
+    <header class="site-header layer">
+      <div class="site-header__inner">
+        <!-- Brand mark: a cloud with a pulse line running through it.
+             The cloud is built from overlapping circles over a rounded base,
+             which gives a softer, rounder silhouette than a single path. -->
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="100%" height="100%" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <defs>
+              <linearGradient id="sp-cloud" x1="6" y1="6" x2="26" y2="25" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#7cb8fb" />
+                <stop offset="45%" stop-color="#3b82f6" />
+                <stop offset="100%" stop-color="#1d4ed8" />
+              </linearGradient>
+              <linearGradient id="sp-pulse" x1="2" y1="16" x2="30" y2="16" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#fbbf24" />
+                <stop offset="50%" stop-color="#f59e0b" />
+                <stop offset="100%" stop-color="#fbbf24" />
+              </linearGradient>
+            </defs>
+
+            <g fill="url(#sp-cloud)">
+              <circle cx="17" cy="13.6" r="6.8" />
+              <circle cx="10.3" cy="17.4" r="4.9" />
+              <circle cx="23.1" cy="17.8" r="4.4" />
+              <rect x="5.6" y="17.6" width="22" height="6.8" rx="3.4" />
+            </g>
+
+            <!-- Highlight along the top of the cloud, for a little volume. -->
+            <path
+              d="M12.6 8.6a6.6 6.6 0 0 1 7.7 1.2"
+              stroke="#ffffff"
+              stroke-opacity=".5"
+              stroke-width="1.6"
+            />
+
+            <!-- The pulse is drawn three times: a light channel that lifts it
+                 off the cloud, the permanent line, and a sweep that traces it. -->
+            <path
+              d="M2.5 18H9l2.4-5.8 3.4 10.6L18 15.6l2.4 2.4h9.1"
+              stroke="#ffffff"
+              stroke-opacity=".55"
+              stroke-width="3.9"
+            />
+            <path
+              class="brand-pulse-base"
+              d="M2.5 18H9l2.4-5.8 3.4 10.6L18 15.6l2.4 2.4h9.1"
+              stroke="url(#sp-pulse)"
+              stroke-width="2.5"
+            />
+            <path
+              class="brand-pulse"
+              d="M2.5 18H9l2.4-5.8 3.4 10.6L18 15.6l2.4 2.4h9.1"
+              pathLength="100"
+              stroke="#fde68a"
+              stroke-width="2.5"
+            />
+          </svg>
+        </span>
+        <h1 class="brand-name">SkyPulse India</h1>
+      </div>
+    </header>
+
+    <main id="main" class="layer mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+      <!-- ===================== Search ===================== -->
+      <section aria-labelledby="search-heading">
+        <h2 id="search-heading" class="sr-only">Search for a city</h2>
+
+        <form id="search-form" class="panel search" novalidate>
+          <div class="search__row">
+            <div class="search__field">
+              <label for="city-input" class="sr-only">City in India</label>
+              <span class="search__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 10.5c0 5.25-8 11-8 11s-8-5.75-8-11a8 8 0 1 1 16 0Z" />
+                  <circle cx="12" cy="10.5" r="2.75" />
+                </svg>
+              </span>
+              <input
+                id="city-input"
+                name="city"
+                type="search"
+                class="search__input"
+                inputmode="search"
+                autocomplete="off"
+                autocapitalize="words"
+                spellcheck="false"
+                enterkeyhint="search"
+                maxlength="60"
+                placeholder="Search a city in India, e.g. Hyderabad"
+                aria-describedby="search-hint input-error"
+              />
+            </div>
+
+            <button id="search-button" type="submit" class="btn btn--primary btn--search">
+              <svg id="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <span id="search-spinner" class="spinner hidden" style="width: 1.25rem; height: 1.25rem" aria-hidden="true"></span>
+              <span id="search-button-label">Search</span>
+            </button>
+          </div>
+
+          <p id="search-hint" class="search__hint">
+            <span>Press <kbd class="kbd">Enter</kbd> to search. Try</span>
+            <button type="button" class="chip" data-example-city="Hyderabad">Hyderabad</button>
+            <button type="button" class="chip" data-example-city="Mumbai">Mumbai</button>
+            <button type="button" class="chip" data-example-city="Chennai">Chennai</button>
+            <button type="button" class="chip" data-example-city="Delhi">Delhi</button>
+            <button type="button" class="chip" data-example-city="Bengaluru">Bengaluru</button>
+            <button type="button" class="chip" data-example-city="Vizag">Vizag</button>
+          </p>
+
+          <p id="input-error" class="search__error hidden" role="alert"></p>
+        </form>
+      </section>
+
+      <!-- Screen-reader channel for asynchronous state changes. -->
+      <p id="live-status" class="sr-only" role="status" aria-live="polite"></p>
+
+      <!-- ===================== Initial state ===================== -->
+      <section id="state-initial" class="state mt-6 sm:mt-8">
+        <div class="empty">
+          <span class="empty__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6.5 18h11a3 3 0 0 0 .3-5.99A4.5 4.5 0 0 0 9.4 10.6 3.5 3.5 0 0 0 6.5 18Z" />
+              <path d="M12 3.5V5M18.4 6.1l-1.1 1.1M20.5 12.5H19" />
+            </svg>
+          </span>
+          <h2 class="empty__title">Search a city to begin</h2>
+          <p class="empty__text">
+            Enter any city in India to see current conditions and a forecast of up to five days.
+            You can export the forecast as a CSV file.
+          </p>
+        </div>
+      </section>
+
+      <!-- ===================== Loading state ===================== -->
+      <section id="state-loading" class="state panel loading mt-6 hidden sm:mt-8" aria-hidden="true">
+        <p class="loading__row">
+          <span class="spinner spinner--brand" style="width: 1.25rem; height: 1.25rem" aria-hidden="true"></span>
+          <span id="loading-message">Fetching the latest weather…</span>
+        </p>
+        <div class="mt-5 space-y-3">
+          <div class="skeleton h-10 w-2/3 sm:w-1/3"></div>
+          <div class="skeleton h-28 w-full"></div>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <div class="skeleton h-20"></div>
+            <div class="skeleton h-20"></div>
+            <div class="skeleton h-20 hidden sm:block"></div>
+            <div class="skeleton h-20 hidden lg:block"></div>
+            <div class="skeleton h-20 hidden lg:block"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Error state ===================== -->
+      <section id="state-error" class="state mt-6 hidden sm:mt-8">
+        <div class="error" role="alert">
+          <span id="error-icon" class="error__icon" aria-hidden="true"></span>
+          <h2 id="error-title" class="error__title">Something went wrong</h2>
+          <p id="error-message" class="error__text"></p>
+          <div class="error__actions">
+            <button id="retry-button" type="button" class="btn btn--secondary hidden">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 11a8 8 0 1 0-2.3 5.6" /><path d="M20 5v6h-6" />
+              </svg>
+              Try again
+            </button>
+            <button id="error-dismiss" type="button" class="btn btn--ghost">Dismiss</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Results ===================== -->
+      <section id="state-results" class="state mt-6 hidden sm:mt-8" aria-labelledby="current-heading">
+        <h2 id="current-heading" class="sr-only">Current weather</h2>
+
+        <!-- Hero: the gradient is themed by condition via data-weather. -->
+        <article id="hero" class="hero" data-weather="clear-day">
+          <span class="hero__glow" aria-hidden="true"></span>
+
+          <div class="hero__body">
+            <div class="hero__top">
+              <div class="min-w-0">
+                <h3 id="location-name" class="hero__place"></h3>
+                <p id="location-meta" class="hero__meta"></p>
+                <p id="observed-at" class="hero__time"></p>
+              </div>
+              <span
+                id="cached-badge"
+                class="badge hidden"
+                title="Served from the server's short-lived cache to save API quota"
+                >Cached</span
+              >
+            </div>
+
+            <div class="hero__main">
+              <div id="current-icon" class="hero__icon" aria-hidden="true"></div>
+              <div class="hero__readout">
+                <p class="hero__temp">
+                  <span id="current-temp">–</span>
+                  <span class="hero__unit">°C</span>
+                </p>
+                <p id="current-condition" class="hero__condition"></p>
+                <p id="current-feels" class="hero__feels"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Supporting metrics -->
+          <div class="metrics">
+            <h4 class="sr-only">Current conditions detail</h4>
+            <dl id="metrics-grid" class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5"></dl>
+          </div>
+        </article>
+
+        <!-- Forecast -->
+        <section class="mt-7 sm:mt-9" aria-labelledby="forecast-heading">
+          <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-4">
+            <div class="min-w-0">
+              <h2 id="forecast-heading" class="section-title">Daily forecast</h2>
+              <p id="forecast-subtitle" class="section-subtitle"></p>
+            </div>
+
+            <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+              <fieldset class="min-w-0 m-0 border-0 p-0">
+                <legend class="sr-only">Forecast duration in days</legend>
+                <!-- Segments and the sliding highlight are built in app.js. -->
+                <div id="days-selector" class="days" role="radiogroup" aria-label="Forecast duration in days"></div>
+              </fieldset>
+
+              <button id="export-button" type="button" class="btn btn--primary">
+                <svg id="export-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 4v10" /><path d="m8 11 4 4 4-4" /><path d="M5 19h14" />
+                </svg>
+                <span id="export-spinner" class="spinner hidden" style="width: 1rem; height: 1rem" aria-hidden="true"></span>
+                <span id="export-label">Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <p id="export-feedback" class="export-feedback hidden" role="status"></p>
+
+          <div id="forecast-grid" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 sm:gap-4"></div>
+
+          <p id="forecast-note" class="forecast-note"></p>
+        </section>
+      </section>
+    </main>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="layer border-t border-slate-200 bg-white/60 px-4 py-6 sm:px-6">
+      <div class="mx-auto flex max-w-6xl flex-col gap-1.5 text-center text-xs leading-relaxed text-slate-500 sm:text-left">
+        <p>
+          Weather data by
+          <a class="link" href="https://openweathermap.org/" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a>.
+          Location search by
+          <a class="link" href="https://nominatim.openstreetmap.org/" target="_blank" rel="noopener noreferrer">OpenStreetMap Nominatim</a>.
+        </p>
+        <p>
+          Location data ©
+          <a class="link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>,
+          available under the Open Database Licence (ODbL).
+        </p>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
